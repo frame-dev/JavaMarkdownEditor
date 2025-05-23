@@ -7,7 +7,6 @@ import com.vladsch.flexmark.ext.tables.TablesExtension;
 import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Node;
-
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -18,17 +17,27 @@ import java.awt.dnd.*;
 import java.awt.datatransfer.*;
 import java.awt.event.*;
 import java.io.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MarkdownEditorSwing {
 
     private final Parser parser = Parser.builder()
-            .extensions(List.of(TablesExtension.create(), AutolinkExtension.create(), StrikethroughExtension.create()))
+            .extensions(List.of(
+                TablesExtension.create(),
+                AutolinkExtension.create(),
+                StrikethroughExtension.create()
+            ))
             .build();
 
     private final HtmlRenderer renderer = HtmlRenderer.builder()
-            .extensions(List.of(TablesExtension.create(), AutolinkExtension.create(), StrikethroughExtension.create()))
+            .extensions(List.of(
+                TablesExtension.create(),
+                AutolinkExtension.create(),
+                StrikethroughExtension.create()
+            ))
             .build();
 
     private JTextArea editor;
@@ -291,32 +300,73 @@ public class MarkdownEditorSwing {
     }
 
     private void updatePreview() {
-        Node document = parser.parse(editor.getText());
+        String markdown = editor.getText();
+        Node document = parser.parse(markdown);
+        String html = renderer.render(document);
+        
+        // Apply syntax highlighting to code blocks
+        html = highlightCodeBlocks(html);
+        
+        // Add styles for dark/light mode
+        String styles = darkMode ? 
+            "<style>" +
+            "body { background-color: #1e1e1e; color: #d4d4d4; }" +
+            "a { color: #569cd6; }" +
+            "pre { background-color: #2d2d2d; padding: 1em; border-radius: 4px; }" +
+            "code { font-family: 'Consolas', 'Monaco', monospace; }" +
+            "table { border-collapse: collapse; width: 100%; margin: 1em 0; }" +
+            "th, td { border: 1px solid #404040; padding: 8px; }" +
+            "th { background-color: #2d2d2d; }" +
+            "</style>" :
+            "<style>" +
+            "body { background-color: #ffffff; color: #000000; }" +
+            "a { color: #0000ff; }" +
+            "pre { background-color: #f5f5f5; padding: 1em; border-radius: 4px; }" +
+            "code { font-family: 'Consolas', 'Monaco', monospace; }" +
+            "table { border-collapse: collapse; width: 100%; margin: 1em 0; }" +
+            "th, td { border: 1px solid #ddd; padding: 8px; }" +
+            "th { background-color: #f5f5f5; }" +
+            "</style>";
+        
+        preview.setText(styles + html);
+    }
 
-        String bodyStyle = darkMode
-                ? "background: #1e1e1e; color: #ddd; font-family: Arial; font-size: 14px;"
-                : "font-family: Arial; font-size: " + previewFontSize + "px;";
+    private String highlightCodeBlocks(String html) {
+        Pattern pattern = Pattern.compile("<pre><code(?: class=\"language-(\\w+)\")?>(.*?)</code></pre>", Pattern.DOTALL);
+        Matcher matcher = pattern.matcher(html);
+        StringBuffer result = new StringBuffer();
+        
+        while (matcher.find()) {
+            String language = matcher.group(1);
+            String code = matcher.group(2);
+            String highlightedCode = highlightSyntax(code, language);
+            matcher.appendReplacement(result, "<pre><code class=\"language-" + language + "\">" + highlightedCode + "</code></pre>");
+        }
+        matcher.appendTail(result);
+        return result.toString();
+    }
 
-        String preStyle = darkMode
-                ? "font-family: monospace; background:#2d2d2d; color:#ccc; padding:6px; border:1px solid #555;"
-                : "font-family: monospace; background:#f4f4f4; padding:6px; border:1px solid #ccc;";
+    private String highlightSyntax(String code, String language) {
+        if (language == null) {
+            return code;
+        }
 
-        String tableStyle = darkMode
-                ? "border-collapse:collapse; font-family: Arial; border:1px solid #555; color:#ddd; background:#2d2d2d;"
-                : "border-collapse:collapse; font-family: Arial;";
+        // Basic syntax highlighting patterns
+        Map<String, String> patterns = new HashMap<>();
+        patterns.put("comment", "//.*|/\\*[\\s\\S]*?\\*/");
+        patterns.put("string", "\".*?\"|'.*?'");
+        patterns.put("number", "\\b\\d+\\b");
+        patterns.put("keyword", "\\b(if|else|for|while|return|class|public|private|protected|static|void|int|String|boolean)\\b");
+        patterns.put("method", "\\b\\w+(?=\\()");
+        patterns.put("class", "\\b[A-Z]\\w*\\b");
 
-        String cleanHtml = renderer.render(document)
-                .replaceAll("(?i)<code class=\"language-[^\"]*\">", "<code>")
-                .replaceAll("(?i)<pre><code>", "<pre style='" + preStyle + "'><code>")
-                .replaceAll("(?i)<table>", "<table border='1' cellspacing='0' cellpadding='6' style='" + tableStyle + "'>")
-                .replaceAll("(?i)</?thead>", "")
-                .replaceAll("(?i)</?tbody>", "");
-
-        String html = "<html><head><meta charset='UTF-8'></head><body style='" + bodyStyle + "'>" +
-                      cleanHtml + "</body></html>";
-
-        preview.setText(html);
-        preview.setCaretPosition(0);
+        String result = code;
+        for (Map.Entry<String, String> entry : patterns.entrySet()) {
+            String type = entry.getKey();
+            String pattern = entry.getValue();
+            result = result.replaceAll(pattern, "<span class=\"" + type + "\">$0</span>");
+        }
+        return result;
     }
 
     private void exportAsHtml() {

@@ -34,6 +34,11 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+        <dependency>
             <groupId>ch.framedev</groupId>
             <artifactId>SimpleJavaUtils</artifactId>
             <version>1.1.6-RELEASE</version>

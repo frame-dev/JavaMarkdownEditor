@@ -77,6 +77,14 @@ java -jar target/markdown-editor-swing-1.0-SNAPSHOT.jar
 - Drag and drop `.md` files directly into the editor
 - Access recently opened files from the Recent Files menu
 
+### Drag and Drop Support
+The editor supports drag and drop operations for easy file handling:
+- Drag any `.md` or `.markdown` file from your file explorer
+- Drop it anywhere in the editor window
+- The file will automatically load and display
+- Invalid file types will show an error message
+- Multiple files can be dropped, but only the first one will be loaded
+
 ### View Options
 - Toggle dark mode for comfortable viewing
 - Adjust font size from the View menu
@@ -90,6 +98,182 @@ java -jar target/markdown-editor-swing-1.0-SNAPSHOT.jar
   - Syntax highlighting for code blocks
   - Styled tables
   - Custom fonts and spacing
+
+## 📖 Markdown Syntax Guide
+
+### Text Formatting
+| Syntax | Description | Example |
+|--------|-------------|---------|
+| `*italic*` | Italic text | *italic* |
+| `**bold**` | Bold text | **bold** |
+| `~~strikethrough~~` | Strikethrough text | ~~strikethrough~~ |
+| `` `code` `` | Inline code | `code` |
+| `[link](url)` | Hyperlink | [link](https://example.com) |
+| `![alt](url)` | Image | ![alt](image.jpg) |
+
+### Headers
+```markdown
+# H1 Header
+## H2 Header
+### H3 Header
+#### H4 Header
+##### H5 Header
+###### H6 Header
+```
+
+### Lists
+```markdown
+Unordered list:
+- Item 1
+- Item 2
+  - Subitem 2.1
+  - Subitem 2.2
+
+Ordered list:
+1. First item
+2. Second item
+   1. Subitem 2.1
+   2. Subitem 2.2
+```
+
+### Code Blocks
+````markdown
+```java
+public class Hello {
+    public static void main(String[] args) {
+        System.out.println("Hello, World!");
+    }
+}
+```
+````
+
+### Syntax Highlighting
+The editor supports syntax highlighting for code blocks. Simply specify the language after the opening backticks:
+
+```markdown
+```java
+// Java code with syntax highlighting
+public class Example {
+    private String message;
+    
+    public void setMessage(String msg) {
+        this.message = msg;
+    }
+}
+```
+
+```python
+# Python code with syntax highlighting
+def hello_world():
+    print("Hello, World!")
+```
+
+```javascript
+// JavaScript code with syntax highlighting
+function greet(name) {
+    console.log(`Hello, ${name}!`);
+}
+```
+
+```html
+<!-- HTML code with syntax highlighting -->
+<div class="container">
+    <h1>Hello World</h1>
+    <p>This is a paragraph.</p>
+</div>
+```
+
+```css
+/* CSS code with syntax highlighting */
+.container {
+    background-color: #f0f0f0;
+    padding: 20px;
+    border-radius: 5px;
+}
+```
+```
+
+Supported languages include:
+- Java
+- Python
+- JavaScript
+- HTML
+- CSS
+- SQL
+- XML
+- JSON
+- YAML
+- Shell/Bash
+- C/C++
+- Ruby
+- PHP
+- Go
+- Rust
+- TypeScript
+- And many more...
+
+The syntax highlighting adapts to both light and dark themes automatically.
+
+### Tables
+```markdown
+| Header 1 | Header 2 | Header 3 |
+|----------|----------|----------|
+| Cell 1   | Cell 2   | Cell 3   |
+| Cell 4   | Cell 5   | Cell 6   |
+```
+
+### Blockquotes
+```markdown
+> This is a blockquote
+> 
+> > This is a nested blockquote
+```
+
+### Horizontal Rules
+```markdown
+---
+***
+___
+```
+
+### Task Lists
+```markdown
+- [x] Completed task
+- [ ] Pending task
+- [ ] Another task
+```
+
+### Footnotes
+```markdown
+Here's a sentence with a footnote. [^1]
+
+[^1]: This is the footnote.
+```
+
+### Escaping Characters
+Use `\` to escape special characters:
+```markdown
+\* Not italic
+\# Not a header
+\[ Not a link
+```
+
+### Line Breaks
+```markdown
+First line  
+Second line (two spaces at end of first line)
+
+New paragraph (empty line)
+```
+
+### HTML Support
+Basic HTML tags are supported:
+```markdown
+<kbd>Ctrl+C</kbd>
+<mark>Highlighted text</mark>
+<sup>Superscript</sup>
+<sub>Subscript</sub>
+```
 
 ---
 
