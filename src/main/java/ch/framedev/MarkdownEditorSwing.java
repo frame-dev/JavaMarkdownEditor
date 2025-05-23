@@ -151,6 +151,7 @@ public class MarkdownEditorSwing {
 
     private void exportAsHtml() {
         JFileChooser chooser = new JFileChooser();
+        chooser.setFileFilter(new FileNameExtensionFilter("HTML files", "html"));
         int result = chooser.showSaveDialog(null);
         if (result == JFileChooser.APPROVE_OPTION) {
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(chooser.getSelectedFile()))) {
@@ -173,17 +174,9 @@ public class MarkdownEditorSwing {
 
     private void openFile() {
         JFileChooser chooser = new JFileChooser();
-        chooser.setFileFilter(new FileFilter() {
-            @Override
-            public boolean accept(File f) {
-                return f.isDirectory() || f.getName().toLowerCase().endsWith(".md");
-            }
-
-            public String getDescription() {
-                return "Markdown files (*.md)";
-            }
-        });
-        chooser.setAcceptAllFileFilterUsed(false); // Hide "All files"
+        FileNameExtensionFilter mdFilter = new FileNameExtensionFilter("Markdown files (*.md)", "md");
+        chooser.setFileFilter(mdFilter);
+        chooser.setAcceptAllFileFilterUsed(false);
         int result = chooser.showOpenDialog(null);
         if (result == JFileChooser.APPROVE_OPTION) {
             try {
@@ -197,17 +190,9 @@ public class MarkdownEditorSwing {
 
     private void saveFile() {
         JFileChooser chooser = new JFileChooser();
-        chooser.setFileFilter(new FileFilter() {
-            @Override
-            public boolean accept(File f) {
-                return f.isDirectory() || f.getName().toLowerCase().endsWith(".md");
-            }
-
-            public String getDescription() {
-                return "Markdown files (*.md)";
-            }
-        });
-        chooser.setAcceptAllFileFilterUsed(false); // Hide "All files"
+        FileNameExtensionFilter mdFilter = new FileNameExtensionFilter("Markdown files (*.md)", "md");
+        chooser.setFileFilter(mdFilter);
+        chooser.setAcceptAllFileFilterUsed(false);
         int result = chooser.showSaveDialog(null);
         if (result == JFileChooser.APPROVE_OPTION) {
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(chooser.getSelectedFile()))) {
