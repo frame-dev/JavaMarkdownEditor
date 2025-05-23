@@ -12,9 +12,10 @@ package ch.framedev;
  */
 
 import ch.framedev.javamysqlutils.MySQLV2;
-
+@SuppressWarnings("unused")
 public class MySQLManager implements IDatabase {
 
+    @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal"})
     private MySQLV2 mySQLV2;
 
     public MySQLManager() {

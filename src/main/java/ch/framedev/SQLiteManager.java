@@ -13,11 +13,13 @@ package ch.framedev;
 
 import ch.framedev.javasqliteutils.SQLite;
 
+@SuppressWarnings("unused")
 public class SQLiteManager implements IDatabase {
 
     public SQLiteManager() {
         String path = Main.config.getString("database.sqlite.path", "path");
         String database = Main.config.getString("database.sqlite.database", "database");
+        //noinspection InstantiationOfUtilityClass
         new SQLite(path, database);
     }
 }

@@ -10,7 +10,7 @@ package ch.framedev;
  * =============================================
  * This Class was created at 23.05.2025 23:58
  */
-
+@SuppressWarnings("unused")
 public class DatabaseManager {
 
     public enum DatabaseType {
@@ -18,7 +18,7 @@ public class DatabaseManager {
         SQLITE
     }
 
-    private DatabaseType databaseType;
+    private final DatabaseType databaseType;
     private IDatabase iDatabase;
 
     public DatabaseManager(DatabaseType databaseType) {
@@ -27,6 +27,10 @@ public class DatabaseManager {
 
     public IDatabase getIDatabase() {
         return iDatabase;
+    }
+
+    public DatabaseType getDatabaseType() {
+        return databaseType;
     }
 
     public boolean isDatabaseSupported() {
