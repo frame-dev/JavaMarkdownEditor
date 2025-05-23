@@ -40,3 +40,4 @@ build/
 
 .mvn
 remove_files.sh
+recent_files.txt

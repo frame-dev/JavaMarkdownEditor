@@ -89,6 +89,7 @@ public class MarkdownEditorSwing {
             public synchronized void drop(DropTargetDropEvent evt) {
                 try {
                     evt.acceptDrop(DnDConstants.ACTION_COPY);
+                    @SuppressWarnings("unchecked")
                     List<File> droppedFiles = (List<File>) evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
                     loadFile(droppedFiles.get(0));
                 } catch (Exception ex) {
@@ -338,7 +339,8 @@ public class MarkdownEditorSwing {
     }
 
     private void saveRecentFiles() {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("recent_files.txt"))) {
+        File recentFile = new File(new SimpleJavaUtils().getFilePath(Main.class) + "recent_files.txt");
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(recentFile, false))) {
             for (File file : recentFiles) {
                 writer.write(file.getAbsolutePath());
                 writer.newLine();
