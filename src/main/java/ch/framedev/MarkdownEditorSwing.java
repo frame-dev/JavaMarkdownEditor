@@ -170,6 +170,7 @@ public class MarkdownEditorSwing {
 
             @Override
             public void windowClosing(WindowEvent e) {
+                // Prompt to save changes
                 int result = JOptionPane.showConfirmDialog(
                         null,
                         "Do you want to save changes before exiting?",
@@ -177,15 +178,17 @@ public class MarkdownEditorSwing {
                         JOptionPane.YES_NO_CANCEL_OPTION
                 );
 
+                // Handle the user's choice
                 if (result == JOptionPane.CANCEL_OPTION || result == JOptionPane.CLOSED_OPTION) {
                     return;
                 }
 
                 if (result == JOptionPane.YES_OPTION) {
-                    saveFile(); // or save logic
+                    saveFile(); // save the file
                 }
-
-                saveRecentFiles(); // optional
+                // Save recent files
+                saveRecentFiles();
+                // Exit the application
                 System.exit(0);
             }
         });
@@ -193,6 +196,7 @@ public class MarkdownEditorSwing {
 
     private void openLink(String url) {
         try {
+            // Open the link in the default browser
             String os = System.getProperty("os.name").toLowerCase();
             if (os.contains("mac")) {
                 Runtime.getRuntime().exec(new String[]{"open", url});
@@ -207,6 +211,7 @@ public class MarkdownEditorSwing {
     }
 
     private void createViewJMenu(JMenuBar menuBar) {
+        // View Menu
         JMenu viewMenu = new JMenu("View");
         
         // Dark Mode Toggle
@@ -216,6 +221,7 @@ public class MarkdownEditorSwing {
             updateTheme();
             updatePreview();
         });
+        darkModeToggle.setSelected(darkMode);
         viewMenu.add(darkModeToggle);
         
         // Font Size Controls
@@ -328,7 +334,8 @@ public class MarkdownEditorSwing {
                 "th { background-color: #f5f5f5; }" +
                 "</style>";
 
-        preview.setText(styles + html);
+        String fullHtml = "<html><head>" + styles + "</head><body>" + html + "</body></html>";
+        preview.setText(fullHtml);
         preview.setFont(new Font("Arial", Font.PLAIN, previewFontSize));
     }
 
