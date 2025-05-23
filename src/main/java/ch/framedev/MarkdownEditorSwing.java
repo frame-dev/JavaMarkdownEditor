@@ -311,7 +311,7 @@ public class MarkdownEditorSwing {
         String html = renderer.render(document);
 
         // Apply syntax highlighting to code blocks
-        html = highlightCodeBlocks(html);
+        // html = highlightCodeBlocks(html);
 
         // Add styles for dark/light mode
         String styles = darkMode ?
