@@ -49,6 +49,16 @@ public class MarkdownEditorSwing {
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         frame.setSize(1000, 600);
 
+        editor = new JTextArea();
+        editor.setFont(new Font("Arial", Font.PLAIN, fontSize));
+        editor.setLineWrap(true);
+        editor.setWrapStyleWord(true);
+
+        preview = new JEditorPane("text/html", "");
+        preview.setEditable(false);
+        preview.setContentType("text/html");
+        preview.setFont(new Font("Arial", Font.PLAIN, previewFontSize));
+
         // Add keyboard shortcuts
         KeyStroke ctrlS = KeyStroke.getKeyStroke("control S");
         KeyStroke ctrlO = KeyStroke.getKeyStroke("control O");
@@ -82,16 +92,6 @@ public class MarkdownEditorSwing {
                 updatePreview();
             }
         });
-
-        editor = new JTextArea();
-        editor.setFont(new Font("Arial", Font.PLAIN, fontSize));
-        editor.setLineWrap(true);
-        editor.setWrapStyleWord(true);
-
-        preview = new JEditorPane("text/html", "");
-        preview.setEditable(false);
-        preview.setContentType("text/html");
-        preview.setFont(new Font("Arial", Font.PLAIN, previewFontSize));
 
         preview.addHyperlinkListener(e -> {
             if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
@@ -211,7 +211,7 @@ public class MarkdownEditorSwing {
         
         // Font Size Controls
         JMenu fontSizeMenu = new JMenu("Font Size");
-        String[] sizes = {"12", "14", "16", "18", "20"};
+        String[] sizes = {"12", "14", "16", "18", "20", "22", "24", "26", "28", "30", "32", "34", "36", "38", "40"};
         for (String size : sizes) {
             JMenuItem sizeItem = new JMenuItem(size + "px");
             sizeItem.addActionListener(e -> {
