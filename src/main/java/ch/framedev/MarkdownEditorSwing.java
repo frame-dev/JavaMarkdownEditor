@@ -303,38 +303,39 @@ public class MarkdownEditorSwing {
         String markdown = editor.getText();
         Node document = parser.parse(markdown);
         String html = renderer.render(document);
-        
+
         // Apply syntax highlighting to code blocks
         html = highlightCodeBlocks(html);
-        
+
         // Add styles for dark/light mode
-        String styles = darkMode ? 
-            "<style>" +
-            "body { background-color: #1e1e1e; color: #d4d4d4; }" +
-            "a { color: #569cd6; }" +
-            "pre { background-color: #2d2d2d; padding: 1em; border-radius: 4px; }" +
-            "code { font-family: 'Consolas', 'Monaco', monospace; }" +
-            "table { border-collapse: collapse; width: 100%; margin: 1em 0; }" +
-            "th, td { border: 1px solid #404040; padding: 8px; }" +
-            "th { background-color: #2d2d2d; }" +
-            "</style>" :
-            "<style>" +
-            "body { background-color: #ffffff; color: #000000; }" +
-            "a { color: #0000ff; }" +
-            "pre { background-color: #f5f5f5; padding: 1em; border-radius: 4px; }" +
-            "code { font-family: 'Consolas', 'Monaco', monospace; }" +
-            "table { border-collapse: collapse; width: 100%; margin: 1em 0; }" +
-            "th, td { border: 1px solid #ddd; padding: 8px; }" +
-            "th { background-color: #f5f5f5; }" +
-            "</style>";
-        
+        String styles = darkMode ?
+                "<style>" +
+                "body { background-color: #1e1e1e; color: #d4d4d4; font-family: Arial; font-size: " + previewFontSize + "px; }" +
+                "a { color: #569cd6; }" +
+                "pre { background-color: #2d2d2d; padding: 1em; border-radius: 4px; }" +
+                "code { font-family: 'Arial', 'Monaco', monospace; }" +
+                "table { border-collapse: collapse; width: 100%; margin: 1em 0; }" +
+                "th, td { border: 1px solid #404040; padding: 8px; }" +
+                "th { background-color: #2d2d2d; }" +
+                "</style>" :
+                "<style>" +
+                "body { background-color: #ffffff; color: #000000; font-family: Arial; font-size: " + previewFontSize + "px; }" +
+                "a { color: #0000ff; }" +
+                "pre { background-color: #f5f5f5; padding: 1em; border-radius: 4px; }" +
+                "code { font-family: 'Arial', 'Monaco', monospace; }" +
+                "table { border-collapse: collapse; width: 100%; margin: 1em 0; }" +
+                "th, td { border: 1px solid #ddd; padding: 8px; }" +
+                "th { background-color: #f5f5f5; }" +
+                "</style>";
+
         preview.setText(styles + html);
+        preview.setFont(new Font("Arial", Font.PLAIN, previewFontSize));
     }
 
     private String highlightCodeBlocks(String html) {
         Pattern pattern = Pattern.compile("<pre><code(?: class=\"language-(\\w+)\")?>(.*?)</code></pre>", Pattern.DOTALL);
         Matcher matcher = pattern.matcher(html);
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         
         while (matcher.find()) {
             String language = matcher.group(1);
