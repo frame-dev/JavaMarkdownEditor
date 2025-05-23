@@ -27,11 +27,18 @@ public class Main {
         createConfig();
         UIManager.put("FileChooser.useSystemExtensionHiding", Boolean.FALSE);
         UIManager.put("FileChooser.useShellFolder", Boolean.FALSE); // force Swing dialog
-        System.setProperty("apple.laf.useScreenMenuBar", "true"); // optional, mac style
+        if(System.getProperty("os.name").toLowerCase().contains("mac") || System.getProperty("os.name").toLowerCase().contains("darwin")) {
+            System.setProperty("apple.awt.fileDialogForDirectories", "true");
+            System.setProperty("apple.awt.application.name", "MarkdownEditor");
+            System.setProperty("apple.awt.application.appearance", "system");
+            System.setProperty("apple.awt.showGrowBox", "false");
+            System.setProperty("apple.awt.fileDialogForDirectories", "true");
+            System.setProperty("apple.awt.systemMenu", "true");
+            System.setProperty("apple.laf.useScreenMenuBar", "true");
+        }
         System.setProperty("swing.crossPlatformLAF", "true");
         System.setProperty("jdk.swing.usePlatformFileDialog", "false");
-        System.setProperty("apple.awt.fileDialogForDirectories", "false");
-        SwingUtilities.invokeLater(() -> MarkdownEditorSwing.main(args));
+        SwingUtilities.invokeLater(() -> new MarkdownEditorSwing().createAndShowGUI());
     }
 
     public static void createConfig() {

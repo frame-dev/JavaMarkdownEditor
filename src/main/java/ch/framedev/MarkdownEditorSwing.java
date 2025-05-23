@@ -1,5 +1,8 @@
 package ch.framedev;
 
+import ch.framedev.simplejavautils.SimpleJavaUtils;
+import com.vladsch.flexmark.ext.autolink.AutolinkExtension;
+import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension;
 import com.vladsch.flexmark.ext.tables.TablesExtension;
 import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.parser.Parser;
@@ -8,45 +11,61 @@ import com.vladsch.flexmark.util.ast.Node;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.filechooser.FileFilter;
+import javax.swing.event.HyperlinkEvent;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.awt.dnd.*;
+import java.awt.datatransfer.*;
+import java.awt.event.*;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MarkdownEditorSwing {
 
     private final Parser parser = Parser.builder()
-            .extensions(java.util.List.of(TablesExtension.create()))
+            .extensions(List.of(TablesExtension.create(), AutolinkExtension.create(), StrikethroughExtension.create()))
             .build();
 
     private final HtmlRenderer renderer = HtmlRenderer.builder()
-            .extensions(java.util.List.of(TablesExtension.create()))
+            .extensions(List.of(TablesExtension.create(), AutolinkExtension.create(), StrikethroughExtension.create()))
             .build();
+
     private JTextArea editor;
     private JEditorPane preview;
-
+    private JFrame frame;
+    private boolean darkMode = false;
     int fontSize = Main.config.getInt("fontSize", 14);
     int previewFontSize = Main.config.getInt("previewFontSize", 14);
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new MarkdownEditorSwing().createAndShowGUI());
-    }
+    private List<File> recentFiles = new ArrayList<>();
+    private JMenu recentMenu;
 
-    private void createAndShowGUI() {
-        JFrame frame = new JFrame("Markdown Editor");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    public void createAndShowGUI() {
+        loadRecentFiles();
+        frame = new JFrame("Markdown Editor");
+        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         frame.setSize(1000, 600);
 
         editor = new JTextArea();
         editor.setFont(new Font("Arial", Font.PLAIN, fontSize));
+        editor.setLineWrap(true);
+        editor.setWrapStyleWord(true);
+
         preview = new JEditorPane("text/html", "");
         preview.setEditable(false);
         preview.setContentType("text/html");
-        preview.setFont(new Font("Arial", Font.PLAIN, fontSize));
+        preview.setFont(new Font("Arial", Font.PLAIN, previewFontSize));
+
+        preview.addHyperlinkListener(e -> {
+            if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                try {
+                    openLink(e.getURL().toString());
+                } catch (Exception ex) {
+                    showError("Failed to open link: " + ex.getMessage());
+                }
+            }
+        });
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
                 new JScrollPane(editor), new JScrollPane(preview));
@@ -66,32 +85,90 @@ public class MarkdownEditorSwing {
             }
         });
 
+        editor.setDropTarget(new DropTarget() {
+            public synchronized void drop(DropTargetDropEvent evt) {
+                try {
+                    evt.acceptDrop(DnDConstants.ACTION_COPY);
+                    List<File> droppedFiles = (List<File>) evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+                    loadFile(droppedFiles.get(0));
+                } catch (Exception ex) {
+                    showError("Failed to load dropped file: " + ex.getMessage());
+                }
+            }
+        });
+
         JMenuBar menuBar = new JMenuBar();
         createFileJMenu(menuBar);
         createViewJMenu(menuBar);
+
+// Create the Recent Files menu
+        recentMenu = new JMenu("Recent Files");
+
+// Add recent files list dynamically
+        updateRecentMenu();
+
+// Add a separator and a 'Clear' option
+        recentMenu.addSeparator();
+
+// Add to the menu bar
+        menuBar.add(recentMenu);
         frame.setJMenuBar(menuBar);
 
         frame.add(splitPane);
         frame.setVisible(true);
 
         editor.setText("# Welcome\nThis is a *Markdown* editor.");
-
-        editor.setLineWrap(true);
-        editor.setWrapStyleWord(true);
         updatePreview();
+
+        frame.addWindowListener(new WindowAdapter() {
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                int result = JOptionPane.showConfirmDialog(
+                        null,
+                        "Do you want to save changes before exiting?",
+                        "Confirm Exit",
+                        JOptionPane.YES_NO_CANCEL_OPTION
+                );
+
+                if (result == JOptionPane.CANCEL_OPTION || result == JOptionPane.CLOSED_OPTION) {
+                    return;
+                }
+
+                if (result == JOptionPane.YES_OPTION) {
+                    saveFile(); // or save logic
+                }
+
+                saveRecentFiles(); // optional
+                System.exit(0);
+            }
+        });
+    }
+
+    private void openLink(String url) {
+        try {
+            String os = System.getProperty("os.name").toLowerCase();
+            if (os.contains("mac")) {
+                Runtime.getRuntime().exec(new String[]{"open", url});
+            } else if (os.contains("win")) {
+                Runtime.getRuntime().exec(new String[]{"rundll32", "url.dll,FileProtocolHandler", url});
+            } else {
+                Runtime.getRuntime().exec(new String[]{"xdg-open", url});
+            }
+        } catch (IOException e) {
+            showError("Failed to open link: " + e.getMessage());
+        }
     }
 
     private void createViewJMenu(JMenuBar menuBar) {
         JMenu viewMenu = new JMenu("View");
         JCheckBoxMenuItem darkModeToggle = new JCheckBoxMenuItem("Dark Mode");
-        viewMenu.add(darkModeToggle);
-        menuBar.add(viewMenu);
-
-
         darkModeToggle.addActionListener(e -> {
             darkMode = darkModeToggle.isSelected();
             updatePreview();
         });
+        viewMenu.add(darkModeToggle);
+        menuBar.add(viewMenu);
     }
 
     private void createFileJMenu(JMenuBar menuBar) {
@@ -111,18 +188,43 @@ public class MarkdownEditorSwing {
                 exportAsHtml();
             }
         });
+
         fileMenu.add(openItem);
         fileMenu.add(saveItem);
         fileMenu.add(exportHtmlItem);
         menuBar.add(fileMenu);
     }
 
-    private boolean darkMode = false;
+    private void updateRecentMenu() {
+        recentMenu.removeAll();
+        for (File file : recentFiles) {
+            JMenuItem item = new JMenuItem(file.getAbsolutePath());
+            item.addActionListener(e -> loadFile(file));
+            recentMenu.add(item);
+        }
+        if (recentFiles.isEmpty()) {
+            recentMenu.add(new JMenuItem("(No recent files)"));
+        }
+        JMenuItem clearRecentMenu = new JMenuItem("Clear Recent Files");
+        clearRecentMenu.addActionListener(e -> {
+            recentFiles.clear();
+            updateRecentMenu();
+        });
+        recentMenu.add(clearRecentMenu);
+    }
+
+    private void addToRecentFiles(File file) {
+        recentFiles.remove(file);
+        recentFiles.add(0, file);
+        if (recentFiles.size() > 20) {
+            recentFiles.remove(recentFiles.size() - 1);
+        }
+        updateRecentMenu();
+    }
 
     private void updatePreview() {
         Node document = parser.parse(editor.getText());
 
-        // Replace unsupported code class attributes and style <pre> blocks
         String bodyStyle = darkMode
                 ? "background: #1e1e1e; color: #ddd; font-family: Arial; font-size: 14px;"
                 : "font-family: Arial; font-size: " + previewFontSize + "px;";
@@ -146,7 +248,7 @@ public class MarkdownEditorSwing {
                       cleanHtml + "</body></html>";
 
         preview.setText(html);
-        preview.setCaretPosition(0); // Scroll to top
+        preview.setCaretPosition(0);
     }
 
     private void exportAsHtml() {
@@ -159,8 +261,6 @@ public class MarkdownEditorSwing {
         int result = chooser.showSaveDialog(null);
         if (result == JFileChooser.APPROVE_OPTION) {
             File file = chooser.getSelectedFile();
-
-            // Append .html extension if missing
             if (!file.getName().toLowerCase().endsWith(".html")) {
                 file = new File(file.getAbsolutePath() + ".html");
             }
@@ -168,15 +268,12 @@ public class MarkdownEditorSwing {
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
                 Node doc = parser.parse(editor.getText());
                 String rawHtml = renderer.render(doc);
-
-                // Clean fenced code and table styles
                 rawHtml = rawHtml.replaceAll("(?i)<code class=\"language-[^\"]*\">", "<code>");
                 rawHtml = rawHtml.replaceAll("(?i)<pre><code>", "<pre style='font-family: monospace; background:#f4f4f4; padding:6px; border:1px solid #ccc;'><code>");
                 rawHtml = rawHtml.replaceAll("(?i)<table>", "<table border='1' cellspacing='0' cellpadding='6' style='border-collapse:collapse; font-family: Arial;'>");
 
                 String html = "<html><head><meta charset='UTF-8'></head><body style='font-family: Arial; font-size: 14px'>" +
                               rawHtml + "</body></html>";
-
                 writer.write(html);
             } catch (IOException e) {
                 showError("Failed to export: " + e.getMessage());
@@ -199,12 +296,17 @@ public class MarkdownEditorSwing {
                 return;
             }
 
-            try {
-                String content = new String(java.nio.file.Files.readAllBytes(selected.toPath()));
-                editor.setText(content);
-            } catch (IOException e) {
-                showError("Could not read file: " + e.getMessage());
-            }
+            loadFile(selected);
+        }
+    }
+
+    private void loadFile(File file) {
+        try {
+            String content = new String(java.nio.file.Files.readAllBytes(file.toPath()));
+            editor.setText(content);
+            addToRecentFiles(file);
+        } catch (IOException e) {
+            showError("Could not read file: " + e.getMessage());
         }
     }
 
@@ -213,19 +315,18 @@ public class MarkdownEditorSwing {
         FileNameExtensionFilter mdFilter = new FileNameExtensionFilter("Markdown files (*.md)", "md");
         chooser.setFileFilter(mdFilter);
         chooser.setAcceptAllFileFilterUsed(false);
-        chooser.setSelectedFile(new File("untitled.md")); // Optional: default filename
+        chooser.setSelectedFile(new File("untitled.md"));
 
         int result = chooser.showSaveDialog(null);
         if (result == JFileChooser.APPROVE_OPTION) {
             File file = chooser.getSelectedFile();
-
-            // Append .md if it's missing
             if (!file.getName().toLowerCase().endsWith(".md")) {
                 file = new File(file.getAbsolutePath() + ".md");
             }
 
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
                 writer.write(editor.getText());
+                addToRecentFiles(file);
             } catch (IOException e) {
                 showError("Could not save file: " + e.getMessage());
             }
@@ -234,5 +335,32 @@ public class MarkdownEditorSwing {
 
     private void showError(String message) {
         JOptionPane.showMessageDialog(null, message, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void saveRecentFiles() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("recent_files.txt"))) {
+            for (File file : recentFiles) {
+                writer.write(file.getAbsolutePath());
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            showError("Failed to save recent files: " + e.getMessage());
+        }
+    }
+
+    private void loadRecentFiles() {
+        File recentFile = new File(new SimpleJavaUtils().getFilePath(Main.class) + "recent_files.txt");
+        if (!recentFile.exists()) {
+            recentFiles = new ArrayList<>();
+            return; // No recent files to load
+        }
+        try (BufferedReader reader = new BufferedReader(new FileReader(recentFile))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                recentFiles.add(new File(line));
+            }
+        } catch (IOException e) {
+            showError("Failed to load recent files: " + e.getMessage());
+        }
     }
 }
