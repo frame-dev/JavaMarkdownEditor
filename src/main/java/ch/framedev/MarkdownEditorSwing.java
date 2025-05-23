@@ -33,17 +33,19 @@ public class MarkdownEditorSwing {
 
     private JTextArea editor;
     private JEditorPane preview;
-    private JFrame frame;
+
     private boolean darkMode = false;
+
     int fontSize = Main.config.getInt("fontSize", 14);
     int previewFontSize = Main.config.getInt("previewFontSize", 14);
 
+    private static final String RECENT_FILES_PATH = new SimpleJavaUtils().getFilePath(Main.class) + "recent_files.txt";
     private List<File> recentFiles = new ArrayList<>();
     private JMenu recentMenu;
 
     public void createAndShowGUI() {
         loadRecentFiles();
-        frame = new JFrame("Markdown Editor");
+        JFrame frame = new JFrame("Markdown Editor");
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         frame.setSize(1000, 600);
 
@@ -105,7 +107,7 @@ public class MarkdownEditorSwing {
 // Create the Recent Files menu
         recentMenu = new JMenu("Recent Files");
 
-// Add recent files list dynamically
+// Add a recent files list dynamically
         updateRecentMenu();
 
 // Add a separator and a 'Clear' option
@@ -339,7 +341,7 @@ public class MarkdownEditorSwing {
     }
 
     private void saveRecentFiles() {
-        File recentFile = new File(new SimpleJavaUtils().getFilePath(Main.class) + "recent_files.txt");
+        File recentFile = new File(RECENT_FILES_PATH);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(recentFile, false))) {
             for (File file : recentFiles) {
                 writer.write(file.getAbsolutePath());
@@ -351,7 +353,7 @@ public class MarkdownEditorSwing {
     }
 
     private void loadRecentFiles() {
-        File recentFile = new File(new SimpleJavaUtils().getFilePath(Main.class) + "recent_files.txt");
+        File recentFile = new File(RECENT_FILES_PATH);
         if (!recentFile.exists()) {
             recentFiles = new ArrayList<>();
             return; // No recent files to load
