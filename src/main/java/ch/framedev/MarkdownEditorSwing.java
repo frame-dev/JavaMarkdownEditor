@@ -151,17 +151,6 @@ public class MarkdownEditorSwing {
 
     private void exportAsHtml() {
         JFileChooser chooser = new JFileChooser();
-        chooser.setFileFilter(new FileFilter() {
-            @Override
-            public boolean accept(File f) {
-                return f.isDirectory() || f.getName().toLowerCase().endsWith(".md");
-            }
-
-            public String getDescription() {
-                return "Markdown files (*.md)";
-            }
-        });
-        chooser.setAcceptAllFileFilterUsed(false); // Hide "All files"
         int result = chooser.showSaveDialog(null);
         if (result == JFileChooser.APPROVE_OPTION) {
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(chooser.getSelectedFile()))) {
