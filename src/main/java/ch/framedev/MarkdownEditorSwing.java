@@ -49,6 +49,40 @@ public class MarkdownEditorSwing {
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         frame.setSize(1000, 600);
 
+        // Add keyboard shortcuts
+        KeyStroke ctrlS = KeyStroke.getKeyStroke("control S");
+        KeyStroke ctrlO = KeyStroke.getKeyStroke("control O");
+        KeyStroke ctrlE = KeyStroke.getKeyStroke("control E");
+        KeyStroke ctrlD = KeyStroke.getKeyStroke("control D");
+
+        editor.getInputMap().put(ctrlS, "save");
+        editor.getInputMap().put(ctrlO, "open");
+        editor.getInputMap().put(ctrlE, "export");
+        editor.getInputMap().put(ctrlD, "darkMode");
+
+        editor.getActionMap().put("save", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                saveFile();
+            }
+        });
+        editor.getActionMap().put("open", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                openFile();
+            }
+        });
+        editor.getActionMap().put("export", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                exportAsHtml();
+            }
+        });
+        editor.getActionMap().put("darkMode", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                darkMode = !darkMode;
+                updateTheme();
+                updatePreview();
+            }
+        });
+
         editor = new JTextArea();
         editor.setFont(new Font("Arial", Font.PLAIN, fontSize));
         editor.setLineWrap(true);
@@ -165,13 +199,44 @@ public class MarkdownEditorSwing {
 
     private void createViewJMenu(JMenuBar menuBar) {
         JMenu viewMenu = new JMenu("View");
+        
+        // Dark Mode Toggle
         JCheckBoxMenuItem darkModeToggle = new JCheckBoxMenuItem("Dark Mode");
         darkModeToggle.addActionListener(e -> {
             darkMode = darkModeToggle.isSelected();
+            updateTheme();
             updatePreview();
         });
         viewMenu.add(darkModeToggle);
+        
+        // Font Size Controls
+        JMenu fontSizeMenu = new JMenu("Font Size");
+        String[] sizes = {"12", "14", "16", "18", "20"};
+        for (String size : sizes) {
+            JMenuItem sizeItem = new JMenuItem(size + "px");
+            sizeItem.addActionListener(e -> {
+                fontSize = Integer.parseInt(size);
+                previewFontSize = fontSize;
+                editor.setFont(new Font("Arial", Font.PLAIN, fontSize));
+                updatePreview();
+            });
+            fontSizeMenu.add(sizeItem);
+        }
+        viewMenu.add(fontSizeMenu);
+        
         menuBar.add(viewMenu);
+    }
+
+    private void updateTheme() {
+        if (darkMode) {
+            editor.setBackground(new Color(30, 30, 30));
+            editor.setForeground(new Color(221, 221, 221));
+            editor.setCaretColor(new Color(221, 221, 221));
+        } else {
+            editor.setBackground(Color.WHITE);
+            editor.setForeground(Color.BLACK);
+            editor.setCaretColor(Color.BLACK);
+        }
     }
 
     private void createFileJMenu(JMenuBar menuBar) {
@@ -255,31 +320,42 @@ public class MarkdownEditorSwing {
     }
 
     private void exportAsHtml() {
-        JFileChooser chooser = new JFileChooser();
-        FileNameExtensionFilter htmlFilter = new FileNameExtensionFilter("HTML files", "html");
-        chooser.setFileFilter(htmlFilter);
-        chooser.setAcceptAllFileFilterUsed(false);
-        chooser.setSelectedFile(new File("export.html"));
-
-        int result = chooser.showSaveDialog(null);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File file = chooser.getSelectedFile();
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileFilter(new FileNameExtensionFilter("HTML files", "html"));
+        if (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
             if (!file.getName().toLowerCase().endsWith(".html")) {
                 file = new File(file.getAbsolutePath() + ".html");
             }
+            try (FileWriter writer = new FileWriter(file)) {
+                String css = darkMode ?
+                    "body { background: #1e1e1e; color: #ddd; font-family: Arial; font-size: " + previewFontSize + "px; }" +
+                    "pre { font-family: monospace; background:#2d2d2d; color:#ccc; padding:6px; border:1px solid #555; }" +
+                    "table { border-collapse:collapse; font-family: Arial; border:1px solid #555; color:#ddd; background:#2d2d2d; }" +
+                    "th, td { border: 1px solid #555; padding: 6px; }" +
+                    "a { color: #4a9eff; }" +
+                    "code { background: #2d2d2d; padding: 2px 4px; border-radius: 3px; }" :
+                    "body { font-family: Arial; font-size: " + previewFontSize + "px; }" +
+                    "pre { font-family: monospace; background:#f4f4f4; padding:6px; border:1px solid #ccc; }" +
+                    "table { border-collapse:collapse; font-family: Arial; }" +
+                    "th, td { border: 1px solid #ccc; padding: 6px; }" +
+                    "a { color: #0066cc; }" +
+                    "code { background: #f4f4f4; padding: 2px 4px; border-radius: 3px; }";
 
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-                Node doc = parser.parse(editor.getText());
-                String rawHtml = renderer.render(doc);
-                rawHtml = rawHtml.replaceAll("(?i)<code class=\"language-[^\"]*\">", "<code>");
-                rawHtml = rawHtml.replaceAll("(?i)<pre><code>", "<pre style='font-family: monospace; background:#f4f4f4; padding:6px; border:1px solid #ccc;'><code>");
-                rawHtml = rawHtml.replaceAll("(?i)<table>", "<table border='1' cellspacing='0' cellpadding='6' style='border-collapse:collapse; font-family: Arial;'>");
+                String html = "<!DOCTYPE html>\n" +
+                    "<html lang=\"en\">\n" +
+                    "<head>\n" +
+                    "    <meta charset=\"UTF-8\">\n" +
+                    "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
+                    "    <title>" + file.getName() + "</title>\n" +
+                    "    <style>\n" + css + "\n    </style>\n" +
+                    "</head>\n" +
+                    "<body>\n" + renderer.render(parser.parse(editor.getText())) + "\n</body>\n</html>";
 
-                String html = "<html><head><meta charset='UTF-8'></head><body style='font-family: Arial; font-size: 14px'>" +
-                              rawHtml + "</body></html>";
                 writer.write(html);
-            } catch (IOException e) {
-                showError("Failed to export: " + e.getMessage());
+                JOptionPane.showMessageDialog(null, "HTML file exported successfully!");
+            } catch (IOException ex) {
+                showError("Failed to export HTML: " + ex.getMessage());
             }
         }
     }
