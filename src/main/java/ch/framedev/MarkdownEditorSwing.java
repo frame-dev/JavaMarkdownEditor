@@ -151,23 +151,32 @@ public class MarkdownEditorSwing {
 
     private void exportAsHtml() {
         JFileChooser chooser = new JFileChooser();
-        chooser.setFileFilter(new FileNameExtensionFilter("HTML files", "html"));
+        FileNameExtensionFilter htmlFilter = new FileNameExtensionFilter("HTML files", "html");
+        chooser.setFileFilter(htmlFilter);
+        chooser.setAcceptAllFileFilterUsed(false);
+        chooser.setSelectedFile(new File("export.html"));
+
         int result = chooser.showSaveDialog(null);
         if (result == JFileChooser.APPROVE_OPTION) {
-            if (!chooser.getSelectedFile().getName().endsWith(".html")) {
-                chooser.setSelectedFile(new File(chooser.getSelectedFile() + ".html"));
+            File file = chooser.getSelectedFile();
+
+            // Append .html extension if missing
+            if (!file.getName().toLowerCase().endsWith(".html")) {
+                file = new File(file.getAbsolutePath() + ".html");
             }
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(chooser.getSelectedFile()))) {
+
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
                 Node doc = parser.parse(editor.getText());
                 String rawHtml = renderer.render(doc);
 
-                // Optional: clean-fenced code and table styles
+                // Clean fenced code and table styles
                 rawHtml = rawHtml.replaceAll("(?i)<code class=\"language-[^\"]*\">", "<code>");
                 rawHtml = rawHtml.replaceAll("(?i)<pre><code>", "<pre style='font-family: monospace; background:#f4f4f4; padding:6px; border:1px solid #ccc;'><code>");
                 rawHtml = rawHtml.replaceAll("(?i)<table>", "<table border='1' cellspacing='0' cellpadding='6' style='border-collapse:collapse; font-family: Arial;'>");
 
                 String html = "<html><head><meta charset='UTF-8'></head><body style='font-family: Arial; font-size: 14px'>" +
                               rawHtml + "</body></html>";
+
                 writer.write(html);
             } catch (IOException e) {
                 showError("Failed to export: " + e.getMessage());
@@ -177,13 +186,21 @@ public class MarkdownEditorSwing {
 
     private void openFile() {
         JFileChooser chooser = new JFileChooser();
-        FileNameExtensionFilter mdFilter = new FileNameExtensionFilter("Markdown files (*.md)", "md");
+        FileNameExtensionFilter mdFilter = new FileNameExtensionFilter("Markdown files (*.md, *.markdown)", "md", "markdown");
         chooser.setFileFilter(mdFilter);
         chooser.setAcceptAllFileFilterUsed(false);
+
         int result = chooser.showOpenDialog(null);
         if (result == JFileChooser.APPROVE_OPTION) {
+            File selected = chooser.getSelectedFile();
+            if (!selected.getName().toLowerCase().endsWith(".md") &&
+                !selected.getName().toLowerCase().endsWith(".markdown")) {
+                showError("Invalid file type. Please select a .md or .markdown file.");
+                return;
+            }
+
             try {
-                String content = new String(java.nio.file.Files.readAllBytes(chooser.getSelectedFile().toPath()));
+                String content = new String(java.nio.file.Files.readAllBytes(selected.toPath()));
                 editor.setText(content);
             } catch (IOException e) {
                 showError("Could not read file: " + e.getMessage());
@@ -196,12 +213,18 @@ public class MarkdownEditorSwing {
         FileNameExtensionFilter mdFilter = new FileNameExtensionFilter("Markdown files (*.md)", "md");
         chooser.setFileFilter(mdFilter);
         chooser.setAcceptAllFileFilterUsed(false);
+        chooser.setSelectedFile(new File("untitled.md")); // Optional: default filename
+
         int result = chooser.showSaveDialog(null);
         if (result == JFileChooser.APPROVE_OPTION) {
-            if (!chooser.getSelectedFile().getName().endsWith(".md")) {
-                chooser.setSelectedFile(new File(chooser.getSelectedFile() + ".md"));
+            File file = chooser.getSelectedFile();
+
+            // Append .md if it's missing
+            if (!file.getName().toLowerCase().endsWith(".md")) {
+                file = new File(file.getAbsolutePath() + ".md");
             }
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(chooser.getSelectedFile()))) {
+
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
                 writer.write(editor.getText());
             } catch (IOException e) {
                 showError("Could not save file: " + e.getMessage());
