@@ -154,6 +154,9 @@ public class MarkdownEditorSwing {
         chooser.setFileFilter(new FileNameExtensionFilter("HTML files", "html"));
         int result = chooser.showSaveDialog(null);
         if (result == JFileChooser.APPROVE_OPTION) {
+            if (!chooser.getSelectedFile().getName().endsWith(".html")) {
+                chooser.setSelectedFile(new File(chooser.getSelectedFile() + ".html"));
+            }
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(chooser.getSelectedFile()))) {
                 Node doc = parser.parse(editor.getText());
                 String rawHtml = renderer.render(doc);
@@ -195,6 +198,9 @@ public class MarkdownEditorSwing {
         chooser.setAcceptAllFileFilterUsed(false);
         int result = chooser.showSaveDialog(null);
         if (result == JFileChooser.APPROVE_OPTION) {
+            if (!chooser.getSelectedFile().getName().endsWith(".md")) {
+                chooser.setSelectedFile(new File(chooser.getSelectedFile() + ".md"));
+            }
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(chooser.getSelectedFile()))) {
                 writer.write(editor.getText());
             } catch (IOException e) {
